@@ -132,7 +132,6 @@ for name in ["Normal", "Medium", "Hard", "Impossible"]:
 start_btn = CTkButton(left_frame, text="Start", command=start_game)
 start_btn.pack(pady=30, side="bottom")
 buttons.append(start_btn)
-
 right_frame = CTkFrame(window)
 right_frame.pack(side="right", fill="both", expand=True, padx=20, pady=20)
 
