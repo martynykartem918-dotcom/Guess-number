@@ -2,6 +2,7 @@ from customtkinter import *
 import random
 
 set_appearance_mode("dark")
+set_default_color_theme("blue")
 
 window = CTk()
 window.title("Guess the Number")
@@ -12,8 +13,10 @@ difficulty = StringVar(value="")
 target_number = None
 points = 0
 game_running = False
-
+admin_mode_active = False
 buttons = []
+
+ADMIN_PASSWORD = "253876"
 
 left_frame = CTkFrame(window)
 left_frame.pack(side="left", fill="both", expand=True, padx=20, pady=20)
@@ -26,7 +29,7 @@ def show_info(level):
         "Normal": "Range 1–10\nGives 5 points",
         "Medium": "Range 1–25\nGives 10 points",
         "Hard": "Range 1–50\nGives 25 points",
-        "Impossible": "Range 1–100\nGives 50 points",
+        "Impossible": "Range 1–100\nGives ??? points",
     }
     def update_text():
         info_label.configure(text=info[level], wraplength=left_frame.winfo_width())
@@ -41,6 +44,7 @@ def start_game():
     entry.configure(state="normal")
     status_label.configure(text="Game started! Enter your guess.")
     entry.delete(0, END)
+    new_secret()
 
 def stop_game():
     global game_running
@@ -59,13 +63,18 @@ def get_points():
     pts = {"Normal":5, "Medium":10, "Hard":25, "Impossible":50}
     return pts[difficulty.get()]
 
+def new_secret():
+    global target_number
+    if difficulty.get():
+        target_number = random.randint(1, get_range())
+
 def apply_guess():
     global target_number, points
     if not difficulty.get() or not game_running:
         status_label.configure(text="Start game first!")
         return
     if target_number is None:
-        target_number = random.randint(1, get_range())
+        new_secret()
     try:
         guess = int(entry.get())
     except ValueError:
@@ -75,15 +84,35 @@ def apply_guess():
         points += get_points()
         points_label.configure(text=f"Points: {points}")
         status_label.configure(text=f"Correct! It was {target_number}.")
+        new_secret()
     else:
-        status_label.configure(text=f"Wrong! It was {target_number}.")
-    target_number = None
+        status_label.configure(text=f"Wrong! Try again.")
     entry.delete(0, END)
 
 def give_up():
     stop_game()
     disable_all_controls()
     status_label.configure(text=f"You gave up! You collected {points} points.")
+
+def toggle_admin_mode():
+    global admin_mode_active
+    if admin_mode_active:
+        admin_entry.pack_forget()
+        admin_label.pack_forget()
+        admin_mode_active = False
+    else:
+        admin_entry.pack(pady=5)
+        admin_label.pack(pady=5)
+        admin_mode_active = True
+
+def check_admin_password(event=None):
+    if admin_entry.get() == ADMIN_PASSWORD:
+        if target_number is not None:
+            admin_label.configure(text=f"Secret number: {target_number}", text_color="orange")
+        else:
+            admin_label.configure(text="No number yet!", text_color="gray")
+    else:
+        admin_label.configure(text="Wrong password!", text_color="red")
 
 CTkLabel(left_frame, text="Select difficulty:", font=("Arial", 18)).pack(pady=(10,20))
 
@@ -125,5 +154,14 @@ points_label.pack(pady=10)
 give_up_btn = CTkButton(right_frame, text="Give Up", fg_color="red", command=give_up)
 give_up_btn.pack(pady=10)
 buttons.append(give_up_btn)
+
+admin_btn = CTkButton(right_frame, text="Admin Mode", fg_color="#444", command=toggle_admin_mode)
+admin_btn.pack(pady=10)
+buttons.append(admin_btn)
+
+admin_entry = CTkEntry(right_frame, placeholder_text="Enter 6-digit password", show="*")
+admin_entry.bind("<Return>", check_admin_password)
+
+admin_label = CTkLabel(right_frame, text="", font=("Arial", 14))
 
 window.mainloop()
